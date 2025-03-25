@@ -16,19 +16,17 @@ class Constants:
     # Tf+5 epoch
     T5_EPOCH = TF_EPOCH + timedelta(hours=5)
 
-    # EARTH ---------------------------
+    # POSITION ------------------------
 
     # Earth's radius (km)
     R_EARTH = 6378
-    # Earth's gravitational parameter (km^3/s^2)
-    MU_EARTH = 3.986004418E5
-
-    # MEASUREMENTS --------------------
-
     # lat, lon, alt of GS1 (deg, deg, km)
     LLA_GS1 = (-111.536, 35.097, 2.206)
     # lat, lon, alt of GS2 (deg, deg, km)
     LLA_GS2 = (-70.692, -29.016, 2.380)
+
+    # MEASUREMENTS --------------------
+
     # noise covariance of GS1
     R_GS1 = np.diag([1   , 1   , 0.01  , 0.01  ])
     # noise covariance of GS2
