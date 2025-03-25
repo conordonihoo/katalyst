@@ -1,8 +1,10 @@
+import numpy as np
+import spiceypy as spice
 from datetime import datetime
 from typing import Tuple
 
 from .consts import Constants
-from .eci import EciState
+from .eci import EciState, loadKernels
 
 class EcefState:
 
@@ -51,9 +53,6 @@ class EcefState:
         ### Outputs:
         (EciState) equivalent to this ECEF state
         '''
-        import numpy as np
-        import spiceypy as spice
-        from .eci import loadKernels
         # put state into np array
         ecef_state = np.array([self.rx, self.ry, self.rz, self.vx, self.vy, self.vz])
         # use kernels to do ECEF to ECI math (too lazy to poorly reinvent the wheel)
@@ -68,57 +67,6 @@ class EcefState:
         else:
             eci_state = ecef_state
         return EciState(*eci_state)
-
-class GpsMeasurement:
-
-    def __init__(
-            self,
-            time: float,
-            rx:   float,
-            ry:   float,
-            rz:   float,
-            vx:   float,
-            vy:   float,
-            vz:   float,
-        ) -> None:
-        '''
-        The GpsMeasurement object initializer.
-
-        ### Inputs:
-        time (float) - time after T0 epoch (s)
-        rx (float)   - x position in ECEF (km)
-        ry (float)   - y position in ECEF (km)
-        rz (float)   - z position in ECEF (km)
-        vx (float)   - x velocity in ECEF (km/s)
-        vy (float)   - y velocity in ECEF (km/s)
-        vz (float)   - z velocity in ECEF (km/s)
-
-        ### Outputs:
-        None
-        '''
-        from datetime import timedelta
-        self.time = Constants.T0_EPOCH + timedelta(seconds=time)
-        self.rx   = rx
-        self.ry   = ry
-        self.rz   = rz
-        self.vx   = vx
-        self.vy   = vy
-        self.vz   = vz
-        return
-
-    def toEcefState(self) -> EcefState:
-        '''
-        Creates an equivalent ECEF state from this GPS measurement.
-
-        ### Inputs:
-        None
-
-        ### Outputs:
-        (EcefState) equivalent to this GPS measurement
-        '''
-        # GPS measurements are provided in ECEF, so this is kind of useless... but I thought
-        # it would be good to lay down the groundwork for a more complex GPS measurement
-        return EcefState(self.time, self.rx, self.ry, self.rz, self.vx, self.vy, self.vz)
 
 def geodeticToEcef(
         lat: float,
@@ -137,10 +85,9 @@ def geodeticToEcef(
     ### Outputs:
     (Tuple[float, float, float]) x, y, z coordinates in ECEF (km)
     '''
-    import numpy as np
     # convert to radians
-    lat_rad = np.rad2deg(lat)
-    lon_rad = np.rad2deg(lon)
+    lat_rad = np.deg2rad(lat)
+    lon_rad = np.deg2rad(lon)
     # for a spherical Earth, the conversion to the point's location in
     # spherical coordinates is just Earth's radius plus altitude
     radius = Constants.R_EARTH + alt

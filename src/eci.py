@@ -1,4 +1,7 @@
-from datetime import datetime
+import os
+import numpy as np
+import spiceypy as spice
+from datetime import timedelta
 
 from .consts import Constants
 
@@ -109,6 +112,7 @@ class EciState:
     def toKeplerianState(self) -> KeplerianState:
         '''
         Creates an equivalent Keplerian state from this ECI state.
+        Source: Vallado, 4th ed.
 
         ### Inputs:
         None
@@ -116,7 +120,6 @@ class EciState:
         ### Outputs:
         (KeplerianState) equivalent to this ECI state
         '''
-        import numpy as np
         # position and velocity vectors
         r = np.array([self.rx, self.ry, self.rz])
         v = np.array([self.vx, self.vy, self.vz])
@@ -175,43 +178,10 @@ class EciState:
         # create and return KeplerianState object
         return KeplerianState(sma, ecc, inc, raan, arg_perigee, true_anomaly)
 
-class GroundStationMeasurement:
-
-    def __init__(
-            self,
-            time:    datetime,
-            id:      int,
-            ra:      float,
-            dec:     float,
-            ra_dot:  float,
-            dec_dot: float,
-        ) -> None:
-        '''
-        The GroundStationMeasurement object initializer.
-
-        ### Inputs:
-        time (datetime) - time (--)
-        id (int)        - ground station ID (--)
-        ra (float)      - right ascension (deg)
-        dec (float)     - declination (deg)
-        ra_dot (float)  - right ascension rate (deg/s)
-        dec_dot (float) - declination rate (deg/s)
-
-        ### Outputs:
-        None
-        '''
-        self.time    = time
-        self.id      = id
-        self.ra      = ra
-        self.dec     = dec
-        self.ra_dot  = ra_dot
-        self.dec_dot = dec_dot
-        return
-
 # create global var to keep track of kernel loading
 loaded_kernels = False
 
-def loadKernels(force_load=False) -> None:
+def loadKernels(force_load=False) -> int:
     '''
     Load spiceypy kernels for ECI calculations.
 
@@ -219,17 +189,15 @@ def loadKernels(force_load=False) -> None:
     force_load (bool) - flag to force kernel loading
 
     ### Outputs:
-    None
+    (int) 0 if kernels were loaded, 1 otherwise
     '''
-    import os
-    import spiceypy as spice
     # check if previously loaded kernels
     global loaded_kernels
     if loaded_kernels and not force_load:
-        return
+        return 1
     # load kernels
     spice_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
     spice.furnsh(os.path.join(spice_dir, 'naif0012.tls'))
     spice.furnsh(os.path.join(spice_dir, 'earth_latest_high_prec.bpc'))
     loaded_kernels = True
-    return
+    return 0
