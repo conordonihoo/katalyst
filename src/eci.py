@@ -181,7 +181,7 @@ class EciState:
 # create global var to keep track of kernel loading
 loaded_kernels = False
 
-def loadKernels(force_load=False) -> int:
+def loadKernels(force_load: bool=False) -> int:
     '''
     Load spiceypy kernels for ECI calculations.
 

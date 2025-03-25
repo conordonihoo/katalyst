@@ -131,13 +131,5 @@ class TestNav(ut.TestCase):
         gs = GroundStationMeasurement(elapsed_seconds, Constants.ID_GS1, 0, 0, 0, 0)
         self.assertEqual((gs.time - Constants.T0_EPOCH).total_seconds(), elapsed_seconds)
 
-
-class TestMain(ut.TestCase):
-    '''
-    Unit tests for main.py
-    '''
-    def test_00(self):
-        self.assertTrue(True)
-
 if __name__ == '__main__':
     ut.main()

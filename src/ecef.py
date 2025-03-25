@@ -42,7 +42,27 @@ class EcefState:
         self.vz   = vz
         return
 
-    def toEciState(self, assume_earth_rotation=False) -> EciState:
+    def __str__(self) -> str:
+        '''
+        Return this object in string format.
+
+        ### Inputs:
+        None
+
+        ### Outputs:
+        (str) representing this object
+        '''
+        return f'EcefState(\n' \
+               f'  time:         {self.time}\n' \
+               f'  x position:   {self.rx:.3f} (km)\n' \
+               f'  y position:   {self.ry:.3f} (km)\n' \
+               f'  z position:   {self.rz:.3f} (km)\n' \
+               f'  x velocity:   {self.vx:.3f} (km/s)\n' \
+               f'  y velocity:   {self.vy:.3f} (km/s)\n' \
+               f'  z velocity:   {self.vz:.3f} (km/s)\n' \
+               f')'
+
+    def toEciState(self, assume_earth_rotation: bool=False) -> EciState:
         '''
         Creates an equivalent ECI state from this ECEF state.
 
