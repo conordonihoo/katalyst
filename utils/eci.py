@@ -131,15 +131,15 @@ class EciState:
         n_vec = np.cross(z_axis, h_vec)
         n_mag = np.linalg.norm(n_vec)
         # eccentricity vector
-        e_vec = np.cross(v, h_vec)/mu - r/r_mag
+        e_vec = np.cross(v, h_vec)/Constants.MU_EARTH - r/r_mag
         ecc = np.linalg.norm(e_vec)
         # specific orbital energy
-        energy = v_mag**2/2 - mu/r_mag
+        energy = v_mag**2/2 - Constants.MU_EARTH/r_mag
         # semi-major axis
         if abs(ecc - 1.0) < Constants.TOLERANCE: # parabolic orbit case
             sma = float('inf')
         else:
-            sma = -mu / (2 * energy)
+            sma = -Constants.MU_EARTH / (2 * energy)
         # inclination
         inc = np.arccos(h_vec[2] / h_mag)
         inc = np.rad2deg(inc)
