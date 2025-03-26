@@ -75,10 +75,9 @@ def main(assume_rotating_earth: bool) -> None:
     ### Outputs:
     None
     '''
-
     # Get Measurements
     measurements = parseCsv('./data/measurements.csv')
-    states = measurementsToEciStates(measurements)
+    states = measurementsToEciStates(measurements, assume_rotating_earth)
     for state in states:
         print(state)
     return

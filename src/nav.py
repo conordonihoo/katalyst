@@ -2,9 +2,9 @@ from datetime import timedelta
 import numpy as np
 from typing import List, Union, Optional
 
-from .utils import Constants
+from .utils import modPos, Constants
 from .ecef import EcefState, generateEcefToEciTransform
-from .eci import EciState
+from .eci import EciState, KeplerianState
 
 class GpsMeasurement:
 
@@ -350,7 +350,7 @@ def measurementsToEciStates(
         if len(states) > 0:
             curr_state = states[-1]
             dt = (measurement.time - curr_state.time).total_seconds()
-            propagated_state = propagateState(curr_state, dt)
+            propagated_state = propagateEciState(curr_state, dt)
         # GPS measurements
         if isinstance(measurement, GpsMeasurement):
             states.append(measurement.toEciState(propagated_state, assume_earth_rotation))
@@ -364,27 +364,95 @@ def measurementsToEciStates(
             raise TypeError(f'Invalid measurement type {type(measurement)}')
     return states
 
-def propagateState(state: EciState, dt: float) -> EciState:
+def inverseKeplerEquation(eci_curr: EciState, dt: float) -> EciState:
     '''
-    Propagate state and covariance forward in time using Kepler's Equation.
+    Use numerical approximation of the Inverse Kepler Equation
+    (with Newton's method) to solve for the propagated ECI state
+    after some time in seconds.
+    Source: https://en.wikipedia.org/wiki/Kepler%27s_equation#Newton's_method
 
     ### Inputs:
-    state (EciState) - current state
-    dt (float)       - time step in seconds
+    eci_curr (EciState) - current state in ECI
+    dt (float)          - propagated time in seconds
 
     ### Outputs:
-    (Tuple[EciState, np.ndarray]) Propagated state and covariance
+    (EciState) propagated state (with covariance of current state)
     '''
-    # TODO: use Kepler's problem to propagate orbit
-    new_state = state.state
+    # Kepler's equation to calculate eccentric and mean anomaly
+    def keplersEquation(ecc, ta):
+        # handle edge case for true anomaly near 180 degrees
+        if abs(np.sin(ta)) < Constants.TOLERANCE and np.cos(ta) < 0:
+            ecc_anom = np.pi
+        # do calculation as normal
+        else:
+            num = np.sqrt(1 - ecc**2) * np.sin(ta)
+            den = ecc + np.cos(ta)
+            ecc_anom = np.arctan2(num, den)
+        mean_anom = ecc_anom - ecc * np.sin(ecc_anom)
+        ecc_anom = modPos(ecc_anom * Constants.RAD2DEG, 360) * Constants.DEG2RAD
+        mean_anom = modPos(mean_anom * Constants.RAD2DEG, 360) * Constants.DEG2RAD
+        return ecc_anom, mean_anom
+    # get the current state's Keplerian elements
+    sma, ecc, inc, raan, argp, ta = eci_curr.toKeplerianState().state
+    # propagation was only written to work with elliptical orbits
+    if ecc >= 1:
+        raise ValueError('orbit must be elliptical (eccentricity must be < 1)')
+    # calculate mean motion (rad/s)
+    n = np.sqrt(Constants.MU_EARTH / abs(sma**3))
+    # calculate eccentric and mean anomaly
+    ecc_anom, mean_anom = keplersEquation(ecc, ta)
+    # propagate mean anomaly
+    mean_anom_new = mean_anom + n * dt
+    mean_anom_new = modPos(mean_anom_new * Constants.RAD2DEG, 360) * Constants.DEG2RAD
+    # Newton-Raphson iteration should converge in a few iterations
+    ecc_anom_new = ecc_anom  # initial guess
+    for _ in range(25):
+        # solve for Kepler Equation root
+        f = ecc_anom_new - ecc * np.sin(ecc_anom_new) - mean_anom_new
+        f_prime = 1 - ecc * np.cos(ecc_anom_new)
+        # update estimate
+        delta_ecc_anom_new = f / f_prime
+        ecc_anom_new = ecc_anom_new - delta_ecc_anom_new
+        # check for convergence
+        if abs(delta_ecc_anom_new) < Constants.TOLERANCE:
+            break
+    # convert back to true anomaly
+    ta_new = 2 * np.arctan2(np.sqrt(1 + ecc) * np.sin(ecc_anom_new/2), np.sqrt(1 - ecc) * np.cos(ecc_anom_new/2))
+    # create the new state
+    kep_new = KeplerianState(eci_curr.time + timedelta(seconds=dt), sma, ecc, inc, raan, argp, ta_new)
+    eci_new = kep_new.toEciState()
+    eci_new.P = eci_curr.P # reuse the current state covariance
+    return eci_new
+
+def propagateEciState(eci_curr: EciState, dt: float) -> EciState:
+    '''
+    Propagate the current state and its covariance forward in time.
+
+    ### Inputs:
+    eci_curr (EciState) - current state in ECI
+    dt (float)          - propagated time in seconds
+
+    ### Outputs:
+    (EciState) propagated state and covariance
+    '''
+    # use Kepler's equation to propagate the state
+    eci_new = inverseKeplerEquation(eci_curr, dt)
     # TODO: state transition matrix (linearization of dynamics)
-    Phi = np.eye(6) # computeStateTransitionMatrix(state.state, dt)
-    # process noise (model uncertainty)... I'm feeling super certain :P
-    Q = np.zeros((6, 6))
+    Phi = np.eye(6)
+    # process noise (model uncertainty) which was characterized in
+    # unit testing KeplerianState.toEciState
+    Q = np.diag([
+        5E+2, # KeplerianState -> r_eci_x
+        5E+2, # KeplerianState -> r_eci_y
+        9E+2, # KeplerianState -> r_eci_z
+        2E-1, # KeplerianState -> v_eci_x
+        7E-2, # KeplerianState -> v_eci_y
+        7E-1, # KeplerianState -> v_eci_z
+    ])
     # propagate covariance
-    P_new = Phi @ state.P @ Phi.T + Q
-    # create new state
-    return EciState(state.time + timedelta(seconds=dt), *new_state, P=P_new)
+    P_new = Phi @ eci_curr.P @ Phi.T + Q
+    eci_new.P = P_new
+    return eci_new
 
 def kalmanUpdate(
         prior_state:    EciState,
