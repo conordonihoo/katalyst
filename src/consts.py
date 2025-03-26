@@ -8,6 +8,13 @@ class Constants:
     a C++ namespace.
     '''
 
+    # MISC. ---------------------------
+
+    ARCSEC2DEG = 1/3600
+    DEG2RAD = np.pi/180
+    RAD2DEG = 1/DEG2RAD
+    TOLERANCE = 1E-10
+
     # TIME ----------------------------
 
     # J2000 Julian date
@@ -23,12 +30,12 @@ class Constants:
 
     # EARTH ---------------------------
 
-    # Earth's radius (km)
-    R_EARTH = 6378
+    # Earth's radius (m)
+    R_EARTH = 6378000
     # Earth's rotation rate, 15 deg/hr, (rad/s)
-    W_EARTH = np.deg2rad(15 / 3600)
-    # Earth's gravitational parameter (km^3/s^2)
-    MU_EARTH = 3.986004418E5
+    W_EARTH = DEG2RAD * 15 / 3600
+    # Earth's gravitational parameter (m^3/s^2)
+    MU_EARTH = 3.986004418E14
 
     # MEASUREMENTS --------------------
 
@@ -38,20 +45,13 @@ class Constants:
     ID_GS2 = 'ground_observer_2'
     # ID for GPS
     ID_GPS = 'gps_measurement'
-    # lat, lon, alt of GS1 (deg, deg, km)
-    LLA_GS1 = (-111.536, 35.097, 2.206)
-    # lat, lon, alt of GS2 (deg, deg, km)
-    LLA_GS2 = (-70.692, -29.016, 2.380)
-    # noise covariance of GS1
-    # TODO: make sure units are correct for applications
-    R_GS1 = np.diag([1   , 1   , 0.01  , 0.01  ])
-    # noise covariance of GS2
-    # TODO: make sure units are correct for applications
-    R_GS2 = np.diag([0.01, 0.01, 0.0001, 0.0001])
-    # noise covariance of GPS
-    # TODO: make sure units are correct for applications
+    # lat, lon, alt of GS1 (rad, rad, m)
+    LLA_GS1 = (DEG2RAD * -111.536, DEG2RAD * 35.097, 2206)
+    # lat, lon, alt of GS2 (rad, rad, m)
+    LLA_GS2 = (DEG2RAD * -70.692, DEG2RAD * -29.016, 2380)
+    # noise covariance of GS1 (rad^2) and (rad^2/s^2)
+    R_GS1 = (ARCSEC2DEG * DEG2RAD)**2 * np.diag([1, 1, 1E-2, 1E-2])
+    # noise covariance of GS2 (rad^2) and (rad^2/s^2)
+    R_GS2 = (ARCSEC2DEG * DEG2RAD)**2 * np.diag([1E-2, 1E-2, 1E-4, 1E-4])
+    # noise covariance of GPS (m^2) and (m^2/s^2)
     R_GPS = np.diag([25E6, 25E6, 25E6, 25E-2, 25E-2, 25E-2])
-
-    # MISC. ---------------------------
-
-    TOLERANCE = 1E-10

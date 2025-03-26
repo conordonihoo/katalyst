@@ -24,20 +24,20 @@ ECI_STATE_NONZERO = np.array([
     1.00004682e+02,
 ])
 ECI_STATE_VALLADO = np.array([
-    6524834e-03,
-    6862875e-03,     # example ECI state taken
-    6448296e-03,     # from Vallado, 4th ed.
-    4901327e-06,     # pg. 114
-    5533756e-06,
-    -1976341e-06,
+    6524834,
+    6862875,         # example ECI state taken
+    6448296,         # from Vallado, 4th ed.
+    4901327e-03,     # pg. 114
+    5533756e-03,
+    -1976341e-03,
 ])
 KEPLERIAN_STATE_VALLADO = np.array([
-    36127343e-03,
-    832853e-06,      # example Keplerian state taken
-    87.870,          # from Vallado, 4th ed.
-    227.898,         # pg. 114
-    53.38,
-    92.335,
+    36127343,
+    832853e-06,                   # example Keplerian state taken
+    87.870 * Constants.DEG2RAD,   # from Vallado, 4th ed.
+    227.898 * Constants.DEG2RAD,  # pg. 114
+    53.38 * Constants.DEG2RAD,
+    92.335 * Constants.DEG2RAD,
 ])
 
 class TestEcef(ut.TestCase):
@@ -96,12 +96,12 @@ class TestEci(ut.TestCase):
         eci = EciState(Constants.T0_EPOCH, *ECI_STATE_VALLADO)
         kep = eci.toKeplerianState()
         # assigning delta manually to learn the accuracy
-        self.assertAlmostEqual(kep.sma,          KEPLERIAN_STATE_VALLADO[0], delta=6E-3)
-        self.assertAlmostEqual(kep.ecc,          KEPLERIAN_STATE_VALLADO[1], delta=4E-7)
-        self.assertAlmostEqual(kep.inc,          KEPLERIAN_STATE_VALLADO[2], delta=9E-4)
-        self.assertAlmostEqual(kep.raan,         KEPLERIAN_STATE_VALLADO[3], delta=3E-4)
-        self.assertAlmostEqual(kep.arg_perigee,  KEPLERIAN_STATE_VALLADO[4], delta=5E-3)
-        self.assertAlmostEqual(kep.true_anomaly, KEPLERIAN_STATE_VALLADO[5], delta=2E-4)
+        self.assertAlmostEqual(kep.sma,  KEPLERIAN_STATE_VALLADO[0], delta=6E-0)
+        self.assertAlmostEqual(kep.ecc,  KEPLERIAN_STATE_VALLADO[1], delta=4E-7)
+        self.assertAlmostEqual(kep.inc,  KEPLERIAN_STATE_VALLADO[2], delta=2E-5)
+        self.assertAlmostEqual(kep.raan, KEPLERIAN_STATE_VALLADO[3], delta=5E-6)
+        self.assertAlmostEqual(kep.argp, KEPLERIAN_STATE_VALLADO[4], delta=9E-5)
+        self.assertAlmostEqual(kep.ta,   KEPLERIAN_STATE_VALLADO[5], delta=3E-6)
 
     # loadKernels ------------------------
 

@@ -23,12 +23,12 @@ class EcefState:
 
         ### Inputs:
         time (datetime) - time of state (--)
-        rx (float)      - x position in ECEF (km)
-        ry (float)      - y position in ECEF (km)
-        rz (float)      - z position in ECEF (km)
-        vx (float)      - x velocity in ECEF (km/s)
-        vy (float)      - y velocity in ECEF (km/s)
-        vz (float)      - z velocity in ECEF (km/s)
+        rx (float)      - x position in ECEF (m)
+        ry (float)      - y position in ECEF (m)
+        rz (float)      - z position in ECEF (m)
+        vx (float)      - x velocity in ECEF (m/s)
+        vy (float)      - y velocity in ECEF (m/s)
+        vz (float)      - z velocity in ECEF (m/s)
 
         ### Outputs:
         None
@@ -54,12 +54,12 @@ class EcefState:
         '''
         return f'EcefState(\n' \
                f'  time:         {self.time}\n' \
-               f'  x position:   {self.rx:.3f} (km)\n' \
-               f'  y position:   {self.ry:.3f} (km)\n' \
-               f'  z position:   {self.rz:.3f} (km)\n' \
-               f'  x velocity:   {self.vx:.3f} (km/s)\n' \
-               f'  y velocity:   {self.vy:.3f} (km/s)\n' \
-               f'  z velocity:   {self.vz:.3f} (km/s)\n' \
+               f'  x position:   {self.rx / 1000:.3f} (km)\n' \
+               f'  y position:   {self.ry / 1000:.3f} (km)\n' \
+               f'  z position:   {self.rz / 1000:.3f} (km)\n' \
+               f'  x velocity:   {self.vx / 1000:.3f} (km/s)\n' \
+               f'  y velocity:   {self.vy / 1000:.3f} (km/s)\n' \
+               f'  z velocity:   {self.vz / 1000:.3f} (km/s)\n' \
                f')'
     @property
     def state(self) -> np.ndarray:
@@ -122,21 +122,18 @@ def geodeticToEcef(
     to ECEF coordinates.
 
     ### Inputs:
-    lat (float) - geodetic latitude (deg)
-    lon (float) - longitude (deg)
-    alt (float) - altitude (km)
+    lat (float) - geodetic latitude (rad)
+    lon (float) - longitude (rad)
+    alt (float) - altitude (m)
 
     ### Outputs:
-    (Tuple[float, float, float]) x, y, z coordinates in ECEF (km)
+    (Tuple[float, float, float]) x, y, z coordinates in ECEF (m)
     '''
-    # convert to radians
-    lat_rad = np.deg2rad(lat)
-    lon_rad = np.deg2rad(lon)
     # for a spherical Earth, the conversion to the point's location in
     # spherical coordinates is just Earth's radius plus altitude
     radius = Constants.R_EARTH + alt
     # calculate ECEF coordinates using spherical coordinate conversion
-    x = radius * np.cos(lat_rad) * np.cos(lon_rad)
-    y = radius * np.cos(lat_rad) * np.sin(lon_rad)
-    z = radius * np.sin(lat_rad)
+    x = radius * np.cos(lat) * np.cos(lon)
+    y = radius * np.cos(lat) * np.sin(lon)
+    z = radius * np.sin(lat)
     return x, y, z

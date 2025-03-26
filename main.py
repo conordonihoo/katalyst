@@ -42,21 +42,21 @@ def parseCsv(csv_path: str) -> List[Union[GpsMeasurement, GroundStationMeasureme
             sensor_id = row['sensor_id']
             if sensor_id == Constants.ID_GPS:
                 # Parse GPS measurement
-                rx = float(row['r_x_km'])
-                ry = float(row['r_y_km'])
-                rz = float(row['r_z_km'])
-                vx = float(row['v_x_km/s'])
-                vy = float(row['v_y_km/s'])
-                vz = float(row['v_z_km/s'])
+                rx = float(row['r_x_km']) * 1000
+                ry = float(row['r_y_km']) * 1000
+                rz = float(row['r_z_km']) * 1000
+                vx = float(row['v_x_km/s']) * 1000
+                vy = float(row['v_y_km/s']) * 1000
+                vz = float(row['v_z_km/s']) * 1000
                 measurements.append(GpsMeasurement(
                     time, sensor_id, rx, ry, rz, vx, vy, vz
                 ))
             elif sensor_id in [Constants.ID_GS1, Constants.ID_GS2]:
                 # Parse ground station measurement
-                ra = float(row['ra'])
-                dec = float(row['dec'])
-                ra_dot = float(row['ra_rate'])
-                dec_dot = float(row['dec_rate'])
+                ra = float(row['ra']) * Constants.DEG2RAD
+                dec = float(row['dec']) * Constants.DEG2RAD
+                ra_dot = float(row['ra_rate']) * Constants.DEG2RAD
+                dec_dot = float(row['dec_rate']) * Constants.DEG2RAD
                 measurements.append(GroundStationMeasurement(
                     time, sensor_id, ra, dec, ra_dot, dec_dot
                 ))
