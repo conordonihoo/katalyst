@@ -9,6 +9,7 @@ class KeplerianState:
 
     def __init__(
             self,
+            time: datetime,
             sma:  float,
             ecc:  float,
             inc:  float,
@@ -20,16 +21,18 @@ class KeplerianState:
         The KeplerianState object initializer.
 
         ### Inputs:
-        sma (float)  - semi-major axis (m)
-        ecc (float)  - eccentricity (--)
-        inc (float)  - inclination (rad)
-        raan (float) - right ascension of ascending node (rad)
-        argp (float) - argument of perigee (rad)
-        ta (float)   - true anomaly (rad)
+        time (datetime) - time of state (--)
+        sma (float)     - semi-major axis (m)
+        ecc (float)     - eccentricity (--)
+        inc (float)     - inclination (rad)
+        raan (float)    - right ascension of ascending node (rad)
+        argp (float)    - argument of perigee (rad)
+        ta (float)      - true anomaly (rad)
 
         ### Outputs:
         None
         '''
+        self.time = time
         self.sma = sma
         self.ecc = ecc
         # make sure angles are in the correct range
@@ -50,12 +53,13 @@ class KeplerianState:
         (str) representing this object
         '''
         return f'KeplerianState(\n' \
-               f'  semi-major axis:                     {self.sma / 1000:.3f} (km)\n' \
-               f'  eccentricity:                        {self.ecc:.3f} (--)\n' \
-               f'  inclination:                         {self.inc * Constants.RAD2DEG:.3f} (deg)\n' \
-               f'  right ascension of ascending node:   {self.raan * Constants.RAD2DEG:.3f} (deg)\n' \
-               f'  argument of perigee:                 {self.argp * Constants.RAD2DEG:.3f} (deg)\n' \
-               f'  true anomaly:                        {self.ta * Constants.RAD2DEG:.3f} (deg)\n' \
+               f'  time:                 {self.time}\n' \
+               f'  semi-major axis:      {self.sma / 1000:.3f} (km)\n' \
+               f'  eccentricity:         {self.ecc:.3f} (--)\n' \
+               f'  inclination:          {self.inc * Constants.RAD2DEG:.3f} (deg)\n' \
+               f'  RAAN:                 {self.raan * Constants.RAD2DEG:.3f} (deg)\n' \
+               f'  argument of perigee:  {self.argp * Constants.RAD2DEG:.3f} (deg)\n' \
+               f'  true anomaly:         {self.ta * Constants.RAD2DEG:.3f} (deg)\n' \
                f')'
 
     @property
@@ -70,6 +74,55 @@ class KeplerianState:
         (np.ndarray) containing state variables
         '''
         return np.array([self.sma, self.ecc, self.inc, self.raan, self.argp, self.ta])
+
+    def toEciState(self):
+        '''
+        Creates an equivalent ECI state from this Keplerian state.
+
+        ### Inputs:
+        None
+
+        ### Outputs:
+        (EciState) equivalent to this Keplerian state
+        '''
+        # semi-latus rectum
+        p = self.sma * (1 - self.ecc**2)
+        # radial distance
+        r_mag = p / (1 + self.ecc * np.cos(self.ta))
+        # position and velocity in perifocal coords
+        r_pqw = r_mag * np.array([
+            np.cos(self.ta),
+            np.sin(self.ta),
+                          0,
+        ])
+        v_pqw = np.sqrt(Constants.MU_EARTH / p) * np.array([
+                      -np.sin(self.ta),
+            self.ecc + np.cos(self.ta),
+                                     0,
+        ])
+        # rotate around z-axis by argp
+        Rz_argp = np.array([
+            [np.cos(self.argp), -np.sin(self.argp), 0],
+            [np.sin(self.argp),  np.cos(self.argp), 0],
+            [                0,                  0, 1],
+        ])
+        # rotate around x-axis by inc
+        Rx_inc = np.array([
+            [1,                 0,                0],
+            [0, np.cos(self.inc), -np.sin(self.inc)],
+            [0, np.sin(self.inc),  np.cos(self.inc)],
+        ])
+        # rotate around z-axis by raan
+        Rz_raan = np.array([
+            [np.cos(self.raan), -np.sin(self.raan), 0],
+            [np.sin(self.raan),  np.cos(self.raan), 0],
+            [                0,                  0, 1],
+        ])
+        # PQW to ECI transformation
+        T_pqw_to_eci = Rz_raan @ Rx_inc @ Rz_argp
+        r_eci = T_pqw_to_eci @ r_pqw
+        v_eci = T_pqw_to_eci @ v_pqw
+        return EciState(self.time, *r_eci, *v_eci)
 
 class EciState:
 
@@ -208,7 +261,7 @@ class EciState:
             if np.dot(r, v) < 0:
                 ta = 2 * np.pi - ta
         # create and return KeplerianState object
-        return KeplerianState(sma, ecc, inc, raan, argp, ta)
+        return KeplerianState(self.time, sma, ecc, inc, raan, argp, ta)
 
 # create global var to keep track of kernel loading
 loaded_kernels = False

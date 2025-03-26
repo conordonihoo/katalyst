@@ -366,7 +366,7 @@ def measurementsToEciStates(
 
 def propagateState(state: EciState, dt: float) -> EciState:
     '''
-    Propagate state and covariance forward in time using orbital dynamics.
+    Propagate state and covariance forward in time using Kepler's Equation.
 
     ### Inputs:
     state (EciState) - current state
@@ -406,7 +406,7 @@ def kalmanUpdate(
     # innovation covariance
     S = H @ prior_state.P @ H.T + measured_state.P
     # Kalman gain
-    K = prior_state.P @ H.T @ np.linalg.inv(S)
+    K = prior_state.P @ H.T @ np.linalg.pinv(S)
     # state update
     updated_state = prior_state.state + K @ (measured_state.state - H @ prior_state.state)
     # covariance update using Joseph form for numerical stability

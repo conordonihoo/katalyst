@@ -103,12 +103,28 @@ class TestEci(ut.TestCase):
         self.assertAlmostEqual(kep.argp, KEPLERIAN_STATE_VALLADO[4], delta=9E-5)
         self.assertAlmostEqual(kep.ta,   KEPLERIAN_STATE_VALLADO[5], delta=3E-6)
 
+    # KeplerianState ---------------------
+
+    def test_02_keplerian_state_to_eci_state_returns_eci_state_type(self):
+        kep = KeplerianState(Constants.T0_EPOCH, *KEPLERIAN_STATE_VALLADO)
+        self.assertIsInstance(kep.toEciState(), EciState)
+    def test_03_keplerian_state_to_eci_state_returns_expected_state(self):
+        kep = KeplerianState(Constants.T0_EPOCH, *KEPLERIAN_STATE_VALLADO)
+        eci = kep.toEciState()
+        # assigning delta manually to learn the accuracy
+        self.assertAlmostEqual(eci.rx, ECI_STATE_VALLADO[0], delta=5E+2)
+        self.assertAlmostEqual(eci.ry, ECI_STATE_VALLADO[1], delta=5E+2)
+        self.assertAlmostEqual(eci.rz, ECI_STATE_VALLADO[2], delta=9E+2)
+        self.assertAlmostEqual(eci.vx, ECI_STATE_VALLADO[3], delta=2E-1)
+        self.assertAlmostEqual(eci.vy, ECI_STATE_VALLADO[4], delta=7E-2)
+        self.assertAlmostEqual(eci.vz, ECI_STATE_VALLADO[5], delta=7E-1)
+
     # loadKernels ------------------------
 
-    def test_02_load_kernels_does_not_load_if_previously_loaded(self):
+    def test_04_load_kernels_does_not_load_if_previously_loaded(self):
         loadKernels() # call once
         self.assertEqual(loadKernels(), 1)
-    def test_03_load_kernels_does_load_if_forced(self):
+    def test_05_load_kernels_does_load_if_forced(self):
         loadKernels() # call once
         self.assertEqual(loadKernels(force_load=True), 0)
 

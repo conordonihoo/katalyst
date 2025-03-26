@@ -80,7 +80,7 @@ def main(assume_rotating_earth: bool) -> None:
     measurements = parseCsv('./data/measurements.csv')
     states = measurementsToEciStates(measurements)
     for state in states:
-        print(state.toKeplerianState())
+        print(state)
     return
 
 if __name__ == '__main__':
