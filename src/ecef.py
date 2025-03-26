@@ -61,6 +61,19 @@ class EcefState:
                f'  y velocity:   {self.vy:.3f} (km/s)\n' \
                f'  z velocity:   {self.vz:.3f} (km/s)\n' \
                f')'
+    @property
+    def state(self) -> np.ndarray:
+        '''
+        Read-only alias for the state variables.
+
+        ### Inputs:
+        None
+
+        ### Outputs:
+        (np.ndarray) containing state variables
+        '''
+        return np.array([self.rx, self.ry, self.rz, self.vx, self.vy, self.vz])
+
 
     def toEciState(self, assume_earth_rotation: bool=False) -> EciState:
         '''
@@ -73,20 +86,31 @@ class EcefState:
         ### Outputs:
         (EciState) equivalent to this ECEF state
         '''
-        # put state into np array
-        ecef_state = np.array([self.rx, self.ry, self.rz, self.vx, self.vy, self.vz])
-        # use kernels to do ECEF to ECI math (too lazy to poorly reinvent the wheel)
-        if assume_earth_rotation:
-            # use spice to get the ECEF to ECI transformation matrix
-            loadKernels()
-            days_since_J2000_in_UTC = (self.time - Constants.J2000_EPOCH).total_seconds() / 86400
-            secs_since_J2000_in_TDB = spice.str2et('jd ' + str(Constants.J2000_JD + days_since_J2000_in_UTC))
-            T_ecef_to_eci = spice.sxform('ITRF93', 'J2000', secs_since_J2000_in_TDB)
-            eci_state = T_ecef_to_eci @ ecef_state
-        # assuming no Earth rotation, ECI state == ECEF state
-        else:
-            eci_state = ecef_state
+        T_ecef_to_eci = generateEcefToEciTransform(self.time, assume_earth_rotation)
+        eci_state = T_ecef_to_eci @ self.state
         return EciState(*eci_state)
+
+def generateEcefToEciTransform(time: datetime, assume_earth_rotation: bool=False) -> np.ndarray:
+    '''
+    Generates the ECEF to ECI transformation matrix at a given time.
+
+    ### Inputs:
+    time (datetime)              - time at which the transformation occurs
+    assume_earth_rotation (bool) - flag to turn "no Earth Rotation"
+                                    assumption on and off
+
+    ### Outputs:
+    (np.ndarray) of the ECEF to ECI transformation matrix
+    '''
+    # assuming no Earth rotation, ECEF == ECI
+    T_ecef_to_eci = np.eye(6)
+    # use spice to get the actual ECEF to ECI transformation matrix
+    if assume_earth_rotation:
+        loadKernels()
+        days_since_J2000_in_UTC = (time - Constants.J2000_EPOCH).total_seconds() / 86400
+        secs_since_J2000_in_TDB = spice.str2et('jd ' + str(Constants.J2000_JD + days_since_J2000_in_UTC))
+        T_ecef_to_eci = spice.sxform('ITRF93', 'J2000', secs_since_J2000_in_TDB)
+    return T_ecef_to_eci
 
 def geodeticToEcef(
         lat: float,
@@ -112,7 +136,6 @@ def geodeticToEcef(
     # spherical coordinates is just Earth's radius plus altitude
     radius = Constants.R_EARTH + alt
     # calculate ECEF coordinates using spherical coordinate conversion
-    # source: https://en.wikipedia.org/wiki/Spherical_coordinate_system
     x = radius * np.cos(lat_rad) * np.cos(lon_rad)
     y = radius * np.cos(lat_rad) * np.sin(lon_rad)
     z = radius * np.sin(lat_rad)

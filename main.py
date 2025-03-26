@@ -7,6 +7,15 @@ from src.eci import *
 from src.nav import *
 
 def parseArgs() -> argparse.Namespace:
+    '''
+    Parse command line args.
+
+    ### Inputs:
+    None
+
+    ### Outputs:
+    (argparse.Namespace) containing cmdline args
+    '''
     desc = 'main.py script to generate a navigation estimation at some time'
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('--rotating-earth', action='store_true',
@@ -73,4 +82,4 @@ def main(assume_rotating_earth: bool) -> None:
 
 if __name__ == '__main__':
     args = parseArgs()
-    main(assume_rotating_earth=args.rotating_earth)
+    main(args.rotating_earth)

@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import spiceypy as spice
-from datetime import timedelta
 
 from .consts import Constants
 
@@ -57,6 +56,19 @@ class KeplerianState:
                f'  true anomaly:                        {self.true_anomaly:.3f} (deg)\n' \
                f')'
 
+    @property
+    def state(self) -> np.ndarray:
+        '''
+        Read-only alias for the state variables.
+
+        ### Inputs:
+        None
+
+        ### Outputs:
+        (np.ndarray) containing state variables
+        '''
+        return np.array([self.sma, self.ecc, self.inc, self.raan, self.arg_perigee, self.true_anomaly])
+
 class EciState:
 
     def __init__(
@@ -88,6 +100,8 @@ class EciState:
         self.vx = vx
         self.vy = vy
         self.vz = vz
+        # zero covariance matrix
+        self.P = np.zeros((6, 6))
         return
 
     def __str__(self) -> str:
@@ -100,6 +114,7 @@ class EciState:
         ### Outputs:
         (str) representing this object
         '''
+        covariance = str(self.P).replace('\n', '\n' + ' '*16)
         return f'EciState(\n' \
                f'  x position:   {self.rx:.3f} (km)\n' \
                f'  y position:   {self.ry:.3f} (km)\n' \
@@ -107,12 +122,25 @@ class EciState:
                f'  x velocity:   {self.vx:.3f} (km/s)\n' \
                f'  y velocity:   {self.vy:.3f} (km/s)\n' \
                f'  z velocity:   {self.vz:.3f} (km/s)\n' \
+               f'  covariance:   {covariance}\n' \
                f')'
+
+    @property
+    def state(self) -> np.ndarray:
+        '''
+        Read-only alias for the state variables.
+
+        ### Inputs:
+        None
+
+        ### Outputs:
+        (np.ndarray) containing state variables
+        '''
+        return np.array([self.rx, self.ry, self.rz, self.vx, self.vy, self.vz])
 
     def toKeplerianState(self) -> KeplerianState:
         '''
         Creates an equivalent Keplerian state from this ECI state.
-        Source: Vallado, 4th ed.
 
         ### Inputs:
         None
@@ -121,8 +149,8 @@ class EciState:
         (KeplerianState) equivalent to this ECI state
         '''
         # position and velocity vectors
-        r = np.array([self.rx, self.ry, self.rz])
-        v = np.array([self.vx, self.vy, self.vz])
+        r = np.array(self.state[0:3])
+        v = np.array(self.state[3:6])
         # position and velocity magnitudes
         r_mag = np.linalg.norm(r)
         v_mag = np.linalg.norm(v)
