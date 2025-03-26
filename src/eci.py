@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import spiceypy as spice
+from datetime import datetime
 
 from .consts import Constants
 
@@ -73,35 +74,40 @@ class EciState:
 
     def __init__(
             self,
-            rx: float,
-            ry: float,
-            rz: float,
-            vx: float,
-            vy: float,
-            vz: float,
+            time: datetime,
+            rx:   float,
+            ry:   float,
+            rz:   float,
+            vx:   float,
+            vy:   float,
+            vz:   float,
+            P:    np.ndarray=np.zeros((6, 6)),
         ) -> None:
         '''
         The EciState object initializer.
 
         ### Inputs:
-        rx (float)   - x position in ECI (km)
-        ry (float)   - y position in ECI (km)
-        rz (float)   - z position in ECI (km)
-        vx (float)   - x velocity in ECI (km/s)
-        vy (float)   - y velocity in ECI (km/s)
-        vz (float)   - z velocity in ECI (km/s)
+        time (datetime) - time of state (--)
+        rx (float)      - x position in ECI (km)
+        ry (float)      - y position in ECI (km)
+        rz (float)      - z position in ECI (km)
+        vx (float)      - x velocity in ECI (km/s)
+        vy (float)      - y velocity in ECI (km/s)
+        vz (float)      - z velocity in ECI (km/s)
+        P (np.ndarray)  - state covariance matrix
 
         ### Outputs:
         None
         '''
-        self.rx = rx
-        self.ry = ry
-        self.rz = rz
-        self.vx = vx
-        self.vy = vy
-        self.vz = vz
-        # zero covariance matrix
-        self.P = np.zeros((6, 6))
+        self.time = time
+        self.rx   = rx
+        self.ry   = ry
+        self.rz   = rz
+        self.vx   = vx
+        self.vy   = vy
+        self.vz   = vz
+        # state covariance matrix
+        self.P = P
         return
 
     def __str__(self) -> str:
@@ -116,6 +122,7 @@ class EciState:
         '''
         covariance = str(self.P).replace('\n', '\n' + ' '*16)
         return f'EciState(\n' \
+               f'  time:         {self.time}\n' \
                f'  x position:   {self.rx:.3f} (km)\n' \
                f'  y position:   {self.ry:.3f} (km)\n' \
                f'  z position:   {self.rz:.3f} (km)\n' \

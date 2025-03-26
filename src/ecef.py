@@ -88,7 +88,7 @@ class EcefState:
         '''
         T_ecef_to_eci = generateEcefToEciTransform(self.time, assume_earth_rotation)
         eci_state = T_ecef_to_eci @ self.state
-        return EciState(*eci_state)
+        return EciState(self.time, *eci_state)
 
 def generateEcefToEciTransform(time: datetime, assume_earth_rotation: bool=False) -> np.ndarray:
     '''

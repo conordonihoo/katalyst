@@ -43,10 +43,13 @@ class Constants:
     # lat, lon, alt of GS2 (deg, deg, km)
     LLA_GS2 = (-70.692, -29.016, 2.380)
     # noise covariance of GS1
+    # TODO: make sure units are correct for applications
     R_GS1 = np.diag([1   , 1   , 0.01  , 0.01  ])
     # noise covariance of GS2
+    # TODO: make sure units are correct for applications
     R_GS2 = np.diag([0.01, 0.01, 0.0001, 0.0001])
     # noise covariance of GPS
+    # TODO: make sure units are correct for applications
     R_GPS = np.diag([25E6, 25E6, 25E6, 25E-2, 25E-2, 25E-2])
 
     # MISC. ---------------------------

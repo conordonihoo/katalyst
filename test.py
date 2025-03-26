@@ -90,10 +90,10 @@ class TestEci(ut.TestCase):
     # EciState ---------------------------
 
     def test_00_eci_state_to_keplerian_state_returns_keplerian_state_type(self):
-        eci = EciState(*ECI_STATE_VALLADO)
+        eci = EciState(Constants.T0_EPOCH, *ECI_STATE_VALLADO)
         self.assertIsInstance(eci.toKeplerianState(), KeplerianState)
     def test_01_eci_state_to_keplerian_state_returns_expected_state(self):
-        eci = EciState(*ECI_STATE_VALLADO)
+        eci = EciState(Constants.T0_EPOCH, *ECI_STATE_VALLADO)
         kep = eci.toKeplerianState()
         # assigning delta manually to learn the accuracy
         self.assertAlmostEqual(kep.sma,          KEPLERIAN_STATE_VALLADO[0], delta=6E-3)
