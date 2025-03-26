@@ -1,7 +1,7 @@
 import numpy as np
 import unittest as ut
 
-from src.consts import Constants
+from src.utils import Constants
 from src.ecef import *
 from src.eci import *
 from src.nav import *

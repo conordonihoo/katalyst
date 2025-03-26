@@ -1,6 +1,21 @@
 import numpy as np
 from datetime import datetime, timedelta, timezone
 
+def modPos(val: float, mod: int) -> float:
+    '''
+    Returns the value in the range [0, mod).
+
+    ### Inputs:
+    val (float) - value to put in range
+    mod (int)   - top end of the range
+
+    ### Outputs:
+    (float) new value in range [0, mod)
+    '''
+    if mod == 0:
+        return val
+    return val % mod
+
 class Constants:
     '''
     Class to store all constants used in this project.

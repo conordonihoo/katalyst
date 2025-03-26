@@ -3,7 +3,7 @@ import spiceypy as spice
 from datetime import datetime
 from typing import Tuple
 
-from .consts import Constants
+from .utils import Constants
 from .eci import EciState, loadKernels
 
 class EcefState:

@@ -3,7 +3,7 @@ import numpy as np
 import spiceypy as spice
 from datetime import datetime
 
-from .consts import Constants
+from .utils import Constants
 
 class KeplerianState:
 

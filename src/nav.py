@@ -2,7 +2,7 @@ from datetime import timedelta
 import numpy as np
 from typing import List, Union, Optional
 
-from .consts import Constants
+from .utils import Constants
 from .ecef import EcefState, generateEcefToEciTransform
 from .eci import EciState
 
