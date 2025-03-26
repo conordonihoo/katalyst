@@ -3,7 +3,7 @@ import numpy as np
 import spiceypy as spice
 from datetime import datetime
 
-from .utils import Constants
+from .utils import modPos, Constants
 
 class KeplerianState:
 
@@ -30,12 +30,13 @@ class KeplerianState:
         ### Outputs:
         None
         '''
-        self.sma  = sma
-        self.ecc  = ecc
-        self.inc  = inc
-        self.raan = raan
-        self.argp = argp
-        self.ta   = ta
+        self.sma = sma
+        self.ecc = ecc
+        # make sure angles are in the correct range
+        self.inc = modPos(inc * Constants.RAD2DEG, 180) * Constants.DEG2RAD
+        self.raan = modPos(raan * Constants.RAD2DEG, 360) * Constants.DEG2RAD
+        self.argp = modPos(argp * Constants.RAD2DEG, 360) * Constants.DEG2RAD
+        self.ta = modPos(ta * Constants.RAD2DEG, 360) * Constants.DEG2RAD
         return
 
     def __str__(self) -> str:
