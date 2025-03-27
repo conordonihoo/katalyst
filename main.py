@@ -91,7 +91,7 @@ def main(assume_rotating_earth: bool) -> None:
     print('---------------')
     print('Tf + 5hr state:')
     print('---------------')
-    print(f'\n{propagateEciState(states[-1], dt).toKeplerianState()}\n')
+    print(f'\n{propagateEciState(states[-1], dt)}\n')
     return
 
 if __name__ == '__main__':
