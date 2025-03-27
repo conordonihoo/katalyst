@@ -272,13 +272,13 @@ class GroundStationMeasurement:
         c_2dec = np.cos(2 * self.dec)
         s_2dec = np.sin(2 * self.dec)
         # dVel/dRA
-        J[3, 0] += v_px * c_dec * c_dec * -s_2ra + v_py * c_dec * c_dec * c_2ra + v_pz * s_dec * c_dec * -s_ra
-        J[4, 0] += v_px * c_dec * c_dec *  c_2ra + v_py * c_dec * c_dec * s_2ra + v_pz * s_dec * c_dec *  c_ra
-        J[5, 0] += v_px * c_dec * -s_ra *  s_dec + v_py * c_dec *  c_ra * s_dec
+        J[3, 0] += r_prop_mag * (v_px * c_dec * c_dec * -s_2ra + v_py * c_dec * c_dec * c_2ra + v_pz * s_dec * c_dec * -s_ra)
+        J[4, 0] += r_prop_mag * (v_px * c_dec * c_dec *  c_2ra + v_py * c_dec * c_dec * s_2ra + v_pz * s_dec * c_dec *  c_ra)
+        J[5, 0] += r_prop_mag * (v_px * c_dec * -s_ra *  s_dec + v_py * c_dec *  c_ra * s_dec)
         # dVel/dDec
-        J[3, 1] += v_px * c_ra * -s_2dec * c_ra + v_py * s_ra * -s_2dec * c_ra + v_pz * c_2dec * c_ra
-        J[4, 1] += v_px * c_ra * -s_2dec * s_ra + v_py * s_ra * -s_2dec * s_ra + v_pz * c_2dec * s_ra
-        J[5, 1] += v_px * c_ra *  c_2dec        + v_py * s_ra *  c_2dec        + v_pz * s_2dec
+        J[3, 1] += r_prop_mag * (v_px * c_ra * -s_2dec * c_ra + v_py * s_ra * -s_2dec * c_ra + v_pz * c_2dec * c_ra)
+        J[4, 1] += r_prop_mag * (v_px * c_ra * -s_2dec * s_ra + v_py * s_ra * -s_2dec * s_ra + v_pz * c_2dec * s_ra)
+        J[5, 1] += r_prop_mag * (v_px * c_ra *  c_2dec        + v_py * s_ra *  c_2dec        + v_pz * s_2dec)
         # dVel/dRA_dot
         J[3, 2] += 0
         J[4, 2] += 0
