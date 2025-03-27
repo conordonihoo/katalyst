@@ -61,9 +61,9 @@ class Constants:
     # ID for GPS
     ID_GPS = 'gps_measurement'
     # lat, lon, alt of GS1 (rad, rad, m)
-    LLA_GS1 = (DEG2RAD * -111.536, DEG2RAD * 35.097, 2206)
+    LLA_GS1 = (DEG2RAD * 35.097, DEG2RAD * -111.536, 2206)
     # lat, lon, alt of GS2 (rad, rad, m)
-    LLA_GS2 = (DEG2RAD * -70.692, DEG2RAD * -29.016, 2380)
+    LLA_GS2 = (DEG2RAD * -29.016, DEG2RAD * -70.692, 2380)
     # noise covariance of GS1 (rad^2) and (rad^2/s^2)
     R_GS1 = (ARCSEC2DEG * DEG2RAD)**2 * np.diag([1, 1, 1E-2, 1E-2])
     # noise covariance of GS2 (rad^2) and (rad^2/s^2)
