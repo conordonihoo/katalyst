@@ -395,13 +395,6 @@ def measurementsToEciStates(
             states.append(measurement.toEciState(propagated_state, assume_earth_rotation))
         else:
             raise TypeError(f'Invalid measurement type {type(measurement)}')
-        print(len(states))
-        print(measurement.id)
-        print(measurement.time - Constants.T0_EPOCH)
-        print(f'r = {np.linalg.norm(states[-1].state[0:3], axis=0)}')
-        print(f'v = {np.linalg.norm(states[-1].state[3:6], axis=0)}')
-        #print(states[-1])
-        print(states[-1].toKeplerianState())
     return states
 
 def inverseKeplerEquation(eci_curr: EciState, dt: float) -> EciState:

@@ -75,11 +75,23 @@ def main(assume_rotating_earth: bool) -> None:
     ### Outputs:
     None
     '''
-    # Get Measurements
+    # get measurements
     measurements = parseCsv('./data/measurements.csv')
     states = measurementsToEciStates(measurements, assume_rotating_earth)
-    for state in states:
-        print(state)
+    # get final state
+    if states[-1].time == Constants.TF_EPOCH:
+        print('---------------')
+        print('Tf state:')
+        print('---------------')
+        print(f'\n{states[-1].toKeplerianState()}\n')
+    else:
+        raise ValueError(f'final state should have the a datetime of {Constants.TF_EPOCH}')
+    # propagate to Tf + 5hr state
+    dt = (Constants.T5_EPOCH - Constants.TF_EPOCH).total_seconds()
+    print('---------------')
+    print('Tf + 5hr state:')
+    print('---------------')
+    print(f'\n{propagateEciState(states[-1], dt).toKeplerianState()}\n')
     return
 
 if __name__ == '__main__':
