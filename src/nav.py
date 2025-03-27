@@ -434,30 +434,56 @@ def inverseKeplerEquation(eci_curr: EciState, dt: float) -> EciState:
         return ecc_anom, mean_anom
     # get the current state's Keplerian elements
     sma, ecc, inc, raan, argp, ta = eci_curr.toKeplerianState().state
-    # propagation was only written to work with elliptical orbits
-    if ecc >= 1:
-        raise ValueError('orbit must be elliptical (eccentricity must be < 1)')
     # calculate mean motion (rad/s)
     n = np.sqrt(Constants.MU_EARTH / abs(sma**3))
-    # calculate eccentric and mean anomaly
-    ecc_anom, mean_anom = keplersEquation(ecc, ta)
-    # propagate mean anomaly
-    mean_anom_new = mean_anom + n * dt
-    mean_anom_new = modPos(mean_anom_new * Constants.RAD2DEG, 360) * Constants.DEG2RAD
-    # Newton-Raphson iteration should converge in a few iterations
-    ecc_anom_new = ecc_anom  # initial guess
-    for _ in range(25):
-        # solve for Kepler Equation root
-        f = ecc_anom_new - ecc * np.sin(ecc_anom_new) - mean_anom_new
-        f_prime = 1 - ecc * np.cos(ecc_anom_new)
-        # update estimate
-        delta_ecc_anom_new = f / f_prime
-        ecc_anom_new = ecc_anom_new - delta_ecc_anom_new
-        # check for convergence
-        if abs(delta_ecc_anom_new) < Constants.TOLERANCE:
-            break
-    # convert back to true anomaly
-    ta_new = 2 * np.arctan2(np.sqrt(1 + ecc) * np.sin(ecc_anom_new/2), np.sqrt(1 - ecc) * np.cos(ecc_anom_new/2))
+    # elliptical orbits
+    if ecc < 1:
+        # calculate eccentric and mean anomaly
+        ecc_anom, mean_anom = keplersEquation(ecc, ta)
+        # propagate mean anomaly
+        mean_anom_new = mean_anom + n * dt
+        mean_anom_new = modPos(mean_anom_new * Constants.RAD2DEG, 360) * Constants.DEG2RAD
+        # Newton-Raphson iteration should converge in a few iterations
+        ecc_anom_new = ecc_anom  # initial guess
+        for _ in range(25):
+            # solve for Kepler Equation root
+            f = ecc_anom_new - ecc * np.sin(ecc_anom_new) - mean_anom_new
+            f_prime = 1 - ecc * np.cos(ecc_anom_new)
+            # update estimate
+            delta_ecc_anom_new = f / f_prime
+            ecc_anom_new = ecc_anom_new - delta_ecc_anom_new
+            # check for convergence
+            if abs(delta_ecc_anom_new) < Constants.TOLERANCE:
+                break
+        # convert back to true anomaly
+        ta_new = 2 * np.arctan2(np.sqrt(1 + ecc) * np.sin(ecc_anom_new/2), np.sqrt(1 - ecc) * np.cos(ecc_anom_new/2))
+    # hyperbolic orbit (e > 1)... not going to waste my time with parabolic
+    else:
+        # calculate hyperbolic anomaly and mean anomaly
+        if abs(np.sin(ta)) < Constants.TOLERANCE and np.cos(ta) < 0:
+            hyp_anom = np.pi
+        else:
+            num = np.sqrt(ecc**2 - 1) * np.sin(ta)
+            den = ecc + np.cos(ta)
+            hyp_anom = np.arcsinh(num / den)
+        # calculate mean anomaly for hyperbolic case
+        mean_anom = ecc * np.sinh(hyp_anom) - hyp_anom
+        # propagate mean anomaly
+        mean_anom_new = mean_anom + n * dt
+        # Newton-Raphson
+        hyp_anom_new = hyp_anom  # Initial guess
+        for _ in range(25):
+            # solve for hyperbolic Kepler equation root
+            f = ecc * np.sinh(hyp_anom_new) - hyp_anom_new - mean_anom_new
+            f_prime = ecc * np.cosh(hyp_anom_new) - 1
+            # update estimate
+            delta_hyp_anom_new = f / f_prime
+            hyp_anom_new = hyp_anom_new - delta_hyp_anom_new
+            # check for convergence
+            if abs(delta_hyp_anom_new) < Constants.TOLERANCE:
+                break
+        # convert back to true anomaly
+        ta_new = 2 * np.arctan(np.sqrt((ecc + 1) / (ecc - 1)) * np.tanh(hyp_anom_new / 2))
     # create the new state
     kep_new = KeplerianState(eci_curr.time + timedelta(seconds=dt), sma, ecc, inc, raan, argp, ta_new)
     eci_new = kep_new.toEciState()
