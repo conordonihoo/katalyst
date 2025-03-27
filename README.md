@@ -2,6 +2,8 @@
 
 This project implements a satellite state estimation system using various coordinate frames, state representations, and sensor measurements. It combines GPS measurements and ground-based observations to determine and track the state of an orbiting satellite.
 
+![Final State Estimation](data/tf_orbit.jpg)
+
 ---
 
 ## Core Concepts
