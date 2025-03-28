@@ -78,6 +78,8 @@ def main(assume_rotating_earth: bool) -> None:
     # get measurements
     measurements = parseCsv('./data/measurements.csv')
     states = measurementsToEciStates(measurements, assume_rotating_earth)
+    for state in states:
+        print(state.toKeplerianState())
     # get final state
     if states[-1].time == Constants.TF_EPOCH:
         print('---------------')
