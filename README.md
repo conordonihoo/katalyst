@@ -89,11 +89,17 @@ Implements a Kalman filter for optimal state estimation:
 ## Usage
 
 ```bash
+# Install python dependencies
+pip3 install -r requirements.txt
+
 # Run with no Earth rotation assumption
-python main.py
+python3 main.py
 
 # Run assuming Earth rotation
-python main.py --rotating-earth
+python3 main.py --rotating-earth
+
+# Run unit tests
+python3 test.py
 ```
 
 ---
@@ -104,11 +110,3 @@ The project includes unit tests in `test.py` that verify:
 - Coordinate transformations
 - State conversions
 - Kernel loading
-
----
-
-## Dependencies
-
-- `numpy`: For numerical operations
-- `spiceypy`: For high-precision ECEF ↔ ECI transformations (assuming Earth rotation)
-- Standard Python libraries: `datetime`, `argparse`, etc.
