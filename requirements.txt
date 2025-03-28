@@ -1,0 +1,4 @@
+numpy==1.24.4
+Pygments==2.3.1
+PyYAML==5.3.1
+spiceypy==6.0.0
