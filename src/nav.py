@@ -181,7 +181,7 @@ class GroundStationMeasurement:
     def _calcMeasuredEciStateCovariance(
             self,
             r_prop_mag:            float,
-            v_prop_mag:            float,
+            v_prop:                np.ndarray,
             assume_earth_rotation: bool=False,
         ) -> np.ndarray:
         '''
@@ -189,7 +189,7 @@ class GroundStationMeasurement:
 
         ### Inputs:
         r_prop_mag (float)           - position magnitude of vehicle in ECI (m)
-        v_prop_mag (np.ndarray)          - velocity magnitude of vehicle in ECI (m/s)
+        v_prop (np.ndarray)          - velocity of vehicle in ECI (m/s)
         assume_earth_rotation (bool) - flag to turn "no Earth Rotation"
                                        assumption on and off
 
@@ -197,10 +197,14 @@ class GroundStationMeasurement:
         (np.ndarray) measured ECI state covariance
         '''
         # trig shorthands
-        c_ra  = np.cos(self.ra)
-        s_ra  = np.sin(self.ra)
-        c_dec = np.cos(self.dec)
-        s_dec = np.sin(self.dec)
+        c_ra   = np.cos(self.ra)
+        s_ra   = np.sin(self.ra)
+        c_dec  = np.cos(self.dec)
+        s_dec  = np.sin(self.dec)
+        c_2ra  = np.cos(2 * self.ra)
+        s_2ra  = np.sin(2 * self.ra)
+        c_2dec = np.cos(2 * self.dec)
+        s_2dec = np.sin(2 * self.dec)
         # compute Jacobian of ECI state w.r.t. [ra, dec, ra_dot, dec_dot]...
         # we need Jacobians because measurement covariances are in angles,
         # but we need them to be in position/velocity
@@ -223,18 +227,19 @@ class GroundStationMeasurement:
         J[1, 3] = 0
         J[2, 3] = 0
         # velocity partials due to tangential velocity (v = [
-        #   v_prop_mag * cos(dec)cos(ra) + r_prop_mag * -ra_dot * cos(dec)sin(ra) + r_prop_mag * -dec_dot * sin(dec)cos(ra),
-        #   v_prop_mag * cos(dec)sin(ra) + r_prop_mag *  ra_dot * cos(dec)cos(ra) + r_prop_mag * -dec_dot * sin(dec)sin(ra),
-        #   v_prop_mag * sin(dec)        +                                          r_prop_mag *  dec_dot * cos(dec)       ,
+        #   v_px * cos(dec)cos(ra)cos(dec)cos(ra) + v_py * cos(dec)sin(ra)cos(dec)cos(ra) + v_pz * sin(dec)cos(dec)cos(ra) + r_prop_mag * -ra_dot * cos(dec)sin(ra) + r_prop_mag * -dec_dot * sin(dec)cos(ra),
+        #   v_px * cos(dec)cos(ra)cos(dec)sin(ra) + v_py * cos(dec)sin(ra)cos(dec)sin(ra) + v_pz * sin(dec)cos(dec)sin(ra) + r_prop_mag *  ra_dot * cos(dec)cos(ra) + r_prop_mag * -dec_dot * sin(dec)sin(ra),
+        #   v_px * cos(dec)cos(ra)sin(dec)        + v_py * cos(dec)sin(ra)sin(dec)        + v_pz * sin(dec)sin(dec)        +                                          r_prop_mag *  dec_dot * cos(dec)       ,
         #])
         # dVel/dRA
-        J[3, 0] = v_prop_mag * (c_dec * -s_ra) + r_prop_mag * (-self.ra_dot * c_dec * c_ra +  self.dec_dot * s_dec * s_ra)
-        J[4, 0] = v_prop_mag * (c_dec *  c_ra) + r_prop_mag * (-self.ra_dot * c_dec * s_ra + -self.dec_dot * s_dec * c_ra)
-        J[5, 0] = 0
+        v_px, v_py, v_pz = v_prop
+        J[3, 0] = v_px * c_dec * c_dec * -s_2ra + v_py * c_dec * c_dec * c_2ra + v_pz * s_dec * c_dec * -s_ra + r_prop_mag * (-self.ra_dot * c_dec * c_ra +  self.dec_dot * s_dec * s_ra)
+        J[4, 0] = v_px * c_dec * c_dec *  c_2ra + v_py * c_dec * c_dec * s_2ra + v_pz * s_dec * c_dec *  c_ra + r_prop_mag * (-self.ra_dot * c_dec * s_ra + -self.dec_dot * s_dec * c_ra)
+        J[5, 0] = v_px * c_dec * -s_ra *  s_dec + v_py * c_dec *  c_ra * s_dec
         # dVel/dDec
-        J[3, 1] = v_prop_mag * (-s_dec * c_ra) + r_prop_mag * ( self.ra_dot * s_dec * s_ra + -self.dec_dot * c_dec * c_ra)
-        J[4, 1] = v_prop_mag * (-s_dec * s_ra) + r_prop_mag * (-self.ra_dot * s_dec * c_ra + -self.dec_dot * c_dec * s_ra)
-        J[5, 1] = v_prop_mag * ( c_dec       ) + r_prop_mag * (                              -self.dec_dot * s_dec       )
+        J[3, 1] = v_px * c_ra * -s_2dec * c_ra + v_py * s_ra * -s_2dec * c_ra + v_pz * c_2dec * c_ra + r_prop_mag * ( self.ra_dot * s_dec * s_ra + -self.dec_dot * c_dec * c_ra)
+        J[4, 1] = v_px * c_ra * -s_2dec * s_ra + v_py * s_ra * -s_2dec * s_ra + v_pz * c_2dec * s_ra + r_prop_mag * (-self.ra_dot * s_dec * c_ra + -self.dec_dot * c_dec * s_ra)
+        J[5, 1] = v_px * c_ra *  c_2dec        + v_py * s_ra *  c_2dec        + v_pz * s_2dec        + r_prop_mag * (                              -self.dec_dot * s_dec       )
         # dVel/dRA_dot
         J[3, 2] = r_prop_mag * (-c_dec * s_ra)
         J[4, 2] = r_prop_mag * ( c_dec * c_ra)
@@ -293,7 +298,6 @@ class GroundStationMeasurement:
         r_prop = propagated_state.state[0:3]
         v_prop = propagated_state.state[3:6]
         r_prop_mag = np.linalg.norm(r_prop, axis=0)
-        v_prop_mag = np.linalg.norm(v_prop, axis=0)
         # trig shorthands
         c_ra  = np.cos(self.ra)
         s_ra  = np.sin(self.ra)
@@ -308,10 +312,11 @@ class GroundStationMeasurement:
         # ECI position
         r_veh_eci = r_prop_mag * r_uv
         # ECI velocity (derivative of position wrt time)
+        dr_prop_mag = np.dot(v_prop, r_uv)
         v_veh_eci = np.array([
-            (v_prop_mag * c_dec * c_ra) + (r_prop_mag * c_dec * -s_ra * self.ra_dot) + (r_prop_mag * -s_dec * c_ra * self.dec_dot),
-            (v_prop_mag * c_dec * s_ra) + (r_prop_mag * c_dec *  c_ra * self.ra_dot) + (r_prop_mag * -s_dec * s_ra * self.dec_dot),
-            (v_prop_mag * s_dec       ) +                                              (r_prop_mag *  c_dec        * self.dec_dot),
+            (dr_prop_mag * c_dec * c_ra) + (r_prop_mag * c_dec * -s_ra * self.ra_dot) + (r_prop_mag * -s_dec * c_ra * self.dec_dot),
+            (dr_prop_mag * c_dec * s_ra) + (r_prop_mag * c_dec *  c_ra * self.ra_dot) + (r_prop_mag * -s_dec * s_ra * self.dec_dot),
+            (dr_prop_mag * s_dec       ) +                                              (r_prop_mag *  c_dec        * self.dec_dot),
         ])
         # account for Earth's rotation in velocity vector
         if assume_earth_rotation:
@@ -324,7 +329,7 @@ class GroundStationMeasurement:
             self.time,
             *r_veh_eci,
             *v_veh_eci,
-            P=self._calcMeasuredEciStateCovariance(r_prop_mag, v_prop_mag, assume_earth_rotation),
+            P=self._calcMeasuredEciStateCovariance(r_prop_mag, v_prop, assume_earth_rotation),
         )
         # apply Kalman update
         return kalmanUpdate(propagated_state, measured_state)
